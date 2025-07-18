@@ -1,0 +1,4 @@
+There are rules to follow to answer the questions: 
+If the character exits before the information was discussed, then the character does not have access to the information. 
+If the character enters after the information was discussed, then the character does not have access to the information. 
+If the character does not have access to the information, then the character does not know precise correct answer to the information.

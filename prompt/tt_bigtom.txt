@@ -1,0 +1,3 @@
+There are rules to follow to answer the questions: 
+If the character does not perceive the event, then the character does not have access to the object’s new state. 
+If the character does not have access to the object’s new state, then the character does not know object’s new state. 
