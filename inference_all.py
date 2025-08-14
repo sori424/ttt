@@ -135,9 +135,9 @@ def main():
     elif args.task_name == 'hitom':
         report = evaluate_hitom(inputs, model_responses)
 
-            
+    short_model_name = args.model_name.split("/")[-1]  
 
-    with open(f'./results/report_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.json', 'w') as f:
+    with open(f'./results/report_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.json', 'w') as f:
         json.dump(report, f, indent=4)
 
 
