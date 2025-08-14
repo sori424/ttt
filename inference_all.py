@@ -10,7 +10,7 @@ from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from llm_utils import *
-from utils import *
+from eval_utils import *
 import pandas as pd
 
 
@@ -102,14 +102,14 @@ def main():
                     help='name of the task to run evaluation',
     )
 
-    parser.add_argument('--use-cot',
-                        type=bool,
+    parser.add_argument('--use-cot', # or no-use-cot
+                        action=argparse.BooleanOptionalAction,
                         default=False,
                         help='whether to use cot or not',
     )
 
-    parser.add_argument('--use-tt',
-                        type=bool,
+    parser.add_argument('--use-tt', # or no-use-tt
+                        action=argparse.BooleanOptionalAction,
                         default=False,
                         help='whether to use tt or not',
     )
@@ -117,7 +117,7 @@ def main():
 
     tokenizer, model = load_model(args.model_name)
     inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
-    inputs = inputs[:100]  ## for test
+    inputs = random.sample(inputs, 200)  ## for test
     model_responses = run_inference(args, inputs, model, tokenizer)
 
     if args.task_name == 'fantom':
@@ -131,14 +131,11 @@ def main():
         report = evaluate_bigtom(inputs, model_responses)
 
 ############ TODO: here you add more task, add evaluate function on utils.py
-    elif args.task_name == 'tomi':
-        print('l')
-
+        
     elif args.task_name == 'hitom':
-        print('ll')
-    
-    elif args.task_name == 'simpletom':
-        print('lll')
+        report = evaluate_hitom(inputs, model_responses)
+
+            
 
     with open(f'./results/report_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.json', 'w') as f:
         json.dump(report, f, indent=4)

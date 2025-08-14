@@ -7,6 +7,8 @@ import datetime
 from tqdm import tqdm
 import pandas as pd
 import argparse
+from loader import *
+import json
 
 class DownloadableFile:
     def __init__(self, url, filename, expected_hash, version="1.0", zipped=True):
@@ -135,13 +137,9 @@ def load():
     return df
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='arguments for dataset loaders')
-    parser.add_argument('--dataset',
-                        type=str,
-                        help="Specify the dataset name.")
-    parser.add_argument('--split',
-                        type=str,
-                        default="train",
-                        help="Specify the split name. train, valid, test, etc.")
-    args = parser.parse_args()
-    load()
+
+    df = load()
+    inputs, flattened_fantom = setup_fantom(df)
+
+    with open('fantom_flattened.json', 'w', encoding='utf-8') as f:
+        json.dump(flattened_fantom, f, ensure_ascii=False, indent=2)

@@ -26,7 +26,7 @@ def set_beliefQA_multiple_choices(qa):
     return choices_text, answer
 
 
-def setup_fantom():
+def setup_fantom(df):
     """
     Flatten the dictionary and add short and full conversation context to each question.
     The result will be a list of questions and list of short or full inputs to be used as input for the models.
@@ -34,7 +34,7 @@ def setup_fantom():
     aggregation_target = "conversation"
     conversation_input_type ="full" #"The input type should have been the full conversation. It doesn't make sense to aggregate the scores over the full conversation when the input is not the full conversation"
 
-    fantom_df_to_run = pd.read_json('./data/fantom/fantom_v1.json')
+    fantom_df_to_run = df
 
     total_num_q = 0
     for idx, _set in fantom_df_to_run.iterrows():

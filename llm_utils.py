@@ -3,12 +3,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 def load_model(model_name):
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype='auto', device_map='auto')
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype='auto').to('cuda')
 
     return tokenizer, model
 
 def gen_text(model, tokenizer, input_text):
-    input = tokenizer(input_text, return_tensors='pt')
+    input = tokenizer(input_text, return_tensors='pt').to('cuda')
     output_tokens = model.generate(
         **input,
         max_new_tokens = 40,
@@ -30,11 +30,11 @@ def gen_chat_template(model, tokenizer, input_text):
         {"role": "user", "content": input_text}
     ]
     prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
-    input = tokenizer(prompt, return_tensors='pt')
+    input = tokenizer(prompt, return_tensors='pt').to('cuda')
 
     output_tokens = model.generate(
         **input,
-        max_new_tokens = 40,
+        max_new_tokens = 100,
         num_return_sequences=1,
         do_sample = True,
         top_p = 0.95,
