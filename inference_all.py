@@ -131,6 +131,7 @@ def main():
         report = run_reports(qas, aggregation_target, conversation_input_type, args.model_name)
         
     elif args.task_name == 'bigtom':
+        short_model_name = args.model_name.split("/")[-1]  
         summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.txt"
         report = evaluate_bigtom(inputs, model_responses, summary_file)
 

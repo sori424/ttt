@@ -1,0 +1,15 @@
+universe		        = docker
+docker_image		    = jiunglee/sic-docker-ttt-2025:latest
+executable              = ttt_gpt120b_tt_bigtom.sh
+output                  = /home/ji-ung.lee/tt-tom/logs/ttt_gpt120b_tt_bigtom.$(Month)_$(Day).$(SUBMIT_TIME).out
+error                   = /home/ji-ung.lee/tt-tom/logs/ttt_gpt120b_tt_bigtom.$(Month)_$(Day).$(SUBMIT_TIME).err
+log                     = /home/ji-ung.lee/tt-tom/logs/ttt_gpt120b_tt_bigtom.$(Month)_$(Day).$(SUBMIT_TIME).log
+should_transfer_files   = YES
+request_GPUs            = 1
+request_CPUs            = 1
+request_memory          = 1G
+requirements            = (GPUs_GlobalMemoryMb >= 80000) && (UidDomain == "cs.uni-saarland.de")
+getenv                  = HOME
++WantGPUHomeMounted     = true
++WantScratchMounted     = true
+queue 1
