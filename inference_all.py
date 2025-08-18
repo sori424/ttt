@@ -2,6 +2,10 @@ import os
 import json
 import argparse
 import random
+import logging 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 import evaluate
 from pathlib import Path
@@ -34,7 +38,7 @@ def get_last_savepoint(args):
 
     # check if model outputs file exists
     if os.path.exists(model_responses_filename_path):
-        print("File {} exists. Reading responses from file...".format(model_responses_filename_path))
+        logging.info(f"File {model_responses_filename_path} exists. Reading responses from file...")
         df = pd.read_json(model_responses_filename_path, lines=True)
         if len(df) > 0:
             last_idx = df.iloc[-1]['index']
@@ -56,8 +60,7 @@ def run_inference(args, inputs, model, tokenizer):
 
     # check if the file exists
     last_idx, model_responses, response_filename_path = get_last_savepoint(args)
-
-    print("Generating responses...")
+    logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
 
         input_prompt = 'Story: ' + item['input_text']
@@ -128,7 +131,8 @@ def main():
         report = run_reports(qas, aggregation_target, conversation_input_type, args.model_name)
         
     elif args.task_name == 'bigtom':
-        report = evaluate_bigtom(inputs, model_responses)
+        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.txt"
+        report = evaluate_bigtom(inputs, model_responses, summary_file)
 
 ############ TODO: here you add more task, add evaluate function on utils.py
         

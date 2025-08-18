@@ -7,6 +7,11 @@ from collections import defaultdict
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
+import logging 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+
 
 ### Evaluation utils for Fantom
 
@@ -169,7 +174,7 @@ def evaluate_fantom(qas, predictions):
     Returns:
         list: Updated list of question-answer pairs with evaluation results and predictions.
     """
-    print("Running evaluation...")
+    logging.info("Running evaluation...")
     assert len(qas) == len(predictions), "Number of questions and model predictions should be the same."
 
     for qa, pred in tqdm(zip(qas, predictions), total=len(qas)):
@@ -378,7 +383,7 @@ def run_reports(qa_results, aggregation_target, conversation_input_type, model_n
 ### Evaluation utils for Bigtom
 
 
-def evaluate_bigtom(inputs, model_responses):
+def evaluate_bigtom(inputs, model_responses, output_file=None):
 
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'correct': 0, 'total': 0})))
     total_correct = 0
@@ -409,19 +414,18 @@ def evaluate_bigtom(inputs, model_responses):
         if correct:
             total_correct += 1
        
-
-    # Print summary
-    print("Condition | Variable | InitBelief | Correct | Total | Accuracy")
-    print("-" * 65)
-    for cond in stats:
-        for var in stats[cond]:
-            for ib in stats[cond][var]:
-                s = stats[cond][var][ib]
-                acc = (s['correct'] / s['total']) if s['total'] else 0
-                print(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}")
-    
-    overall_acc = total_correct / total_count if total_count > 0 else 0
-    print(f"Overall accuracy: {overall_acc:.2%}")
+    # Print summary+
+    with open(output_file,'w') as f:
+        f.write("Condition | Variable | InitBelief | Correct | Total | Accuracy\n")
+        f.write("-" * 65 + "\n")
+        for cond in stats:
+            for var in stats[cond]:
+                for ib in stats[cond][var]:
+                    s = stats[cond][var][ib]
+                    acc = (s['correct'] / s['total']) if s['total'] else 0
+                    f.write(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}")
+        overall_acc = total_correct / total_count if total_count > 0 else 0
+        f.write(f"Overall accuracy: {overall_acc:.2%}")
     return stats
 
 
