@@ -12,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from llm_utils import *
 from eval_utils import *
 import pandas as pd
+from huggingface_hub import login
 
 
 DATA_DIR_PATH = './data'
@@ -29,7 +30,8 @@ def parse_response(response):
 
 def get_last_savepoint(args):
     short_model_name = args.model_name.split("/")[-1]  
-    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.jsonl" # jsonl
+    responses_filename = (f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}"
+                          f"_tt-style-{args.tt_style}.jsonl") # jsonl
     model_responses_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
 
     # check if model outputs file exists
@@ -61,6 +63,12 @@ def run_inference(args, inputs, model, tokenizer):
     for idx, item in enumerate(tqdm(target_data)):
 
         input_prompt = 'Story: ' + item['input_text']
+        if args.task_name == 'bigtom':
+            input_prompt = "\n".join(["Make sure to explicitly state your final answer as Answer:(<option>)<answer>",
+                                  input_prompt, ])
+            input_prompt = input_prompt.rstrip("\nAnswer:")  # quickfix: remove "\nAnswer:" from
+            # "input_text" in bigtom/bigtom_flattened.json
+
         if idx <= last_idx:
             continue
 
@@ -72,10 +80,17 @@ def run_inference(args, inputs, model, tokenizer):
             input_prompt = cot_input_prompt + " " + cot_response + "\n\nTherefore, the answer is:"
 
         if args.use_tt:
-            with open(f"./prompt/tt_{args.task_name}.txt", "r", encoding="utf-8") as file:
-                tt_text = file.read()
-            tt_input_prompt = f"{tt_text}\n\n{input_prompt}"
-            input_prompt = tt_input_prompt
+            if args.task_name == 'bigtom':
+                with open(f"./prompt/tt_{args.task_name}.json", "r", encoding="utf-8") as f:
+                    prompt_dict = json.load(f)
+                    tt_input_prompt = f"{prompt_dict[args.tt_style]}\n\n{input_prompt}"
+                    input_prompt = tt_input_prompt
+            else:
+                with open(f"./prompt/tt_{args.task_name}.txt", "r", encoding="utf-8") as file:
+                    tt_text = file.read()
+                    tt_input_prompt = f"{tt_text}\n\n{input_prompt}"
+                    input_prompt = tt_input_prompt
+
         
         response = gen_chat_template(model, tokenizer, input_prompt)
         response = parse_response(response)
@@ -113,11 +128,32 @@ def main():
                         default=False,
                         help='whether to use tt or not',
     )
+    parser.add_argument('--tt-style',
+                        type=str,
+                        default="default",
+                        help='the style of tt',
+    )
+    parser.add_argument('--HF_token_path',
+                        type=str,
+                        default=None,
+                        help='Path to HuggingFace Token',
+    )
+
     args = parser.parse_args()
+
+    if not args.use_tt:
+        args.tt_style = "None"
+
+    if args.HF_token_path:
+        with open(args.HF_token_path, "r", encoding="utf-8") as file:
+            hf_token = file.read()
+            login(hf_token)
+
 
     tokenizer, model = load_model(args.model_name)
     inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
     inputs = random.sample(inputs, 200)  ## for test
+
     model_responses = run_inference(args, inputs, model, tokenizer)
 
     if args.task_name == 'fantom':
@@ -135,9 +171,11 @@ def main():
     elif args.task_name == 'hitom':
         report = evaluate_hitom(inputs, model_responses)
 
-            
 
-    with open(f'./results/report_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.json', 'w') as f:
+    short_model_name = args.model_name.split("/")[-1]
+
+    with open(f'./results/{short_model_name}_report_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}'
+              f'-style-{args.tt_style}.json', 'w') as f:
         json.dump(report, f, indent=4)
 
 
