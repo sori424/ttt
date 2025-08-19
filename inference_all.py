@@ -75,7 +75,7 @@ def run_inference(args, inputs, model, tokenizer):
             input_prompt = cot_input_prompt + " " + cot_response + "\n\nTherefore, the answer is:"
 
         if args.use_tt:
-            with open(f"./prompt/tt_{args.task_name}.txt", "r", encoding="utf-8") as file:
+            with open(f"./prompt/{args.prompt}", "r", encoding="utf-8") as file:
                 tt_text = file.read()
             tt_input_prompt = f"{tt_text}\n\n{input_prompt}"
             input_prompt = tt_input_prompt
@@ -111,6 +111,12 @@ def main():
                         help='whether to use cot or not',
     )
 
+    parser.add_argument('--prompt', # or no-use-tt
+                        type=str,
+                        default="tt_bigtom.txt",
+                        help='path to the prompt',
+    )
+    
     parser.add_argument('--use-tt', # or no-use-tt
                         action=argparse.BooleanOptionalAction,
                         default=False,
@@ -132,7 +138,7 @@ def main():
         
     elif args.task_name == 'bigtom':
         short_model_name = args.model_name.split("/")[-1]  
-        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.txt"
+        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.prompt}"
         report = evaluate_bigtom(inputs, model_responses, summary_file)
 
 ############ TODO: here you add more task, add evaluate function on utils.py

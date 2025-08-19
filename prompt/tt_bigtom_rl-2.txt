@@ -1,0 +1,9 @@
+There are rules to follow to answer the questions: 
+character(a).
+object(b).
+state(h).
+state(j).
+event(b,h):-object(b),state(h)
+event(b,j):-object(b),state(j)
+perceives(a,event(b,h)):-object(b),state(h)
+not perceives(a,event(b,h)):-object(b),not state(h)    

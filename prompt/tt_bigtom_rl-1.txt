@@ -1,0 +1,6 @@
+There are rules to follow to answer the questions: 
+character(a).
+object(b). 
+event(c).
+If a does not perceive c, then a does not have access to b’s new state. 
+If a does not have access to b’s new state, then a does not know b’s new state. 

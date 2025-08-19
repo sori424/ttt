@@ -3,3 +3,11 @@ docker_stdout
 ttt.sh
 ttt.sub
 __pycache__/
+ttt_gpt20b_tt_bigtom_rl-1.sh
+ttt_gpt20b_tt_bigtom_rl-2.sh
+ttt_gpt20b_tt_bigtom_rl-3.sh
+ttt_gpt20b_tt_bigtom.sh
+ttt_gpt20b_tt_bigtom_rl-1.sub
+ttt_gpt20b_tt_bigtom_rl-2.sub
+ttt_gpt20b_tt_bigtom_rl-3.sub
+ttt_gpt20b_tt_bigtom.sub
