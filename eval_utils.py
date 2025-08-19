@@ -423,7 +423,7 @@ def evaluate_bigtom(inputs, model_responses, output_file=None):
                 for ib in stats[cond][var]:
                     s = stats[cond][var][ib]
                     acc = (s['correct'] / s['total']) if s['total'] else 0
-                    f.write(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}")
+                    f.write(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}\n")
         overall_acc = total_correct / total_count if total_count > 0 else 0
         f.write(f"Overall accuracy: {overall_acc:.2%}")
     return stats

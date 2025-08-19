@@ -33,7 +33,8 @@ def parse_response(response):
 
 def get_last_savepoint(args):
     short_model_name = args.model_name.split("/")[-1]  
-    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.jsonl" # jsonl
+    prompt_name = args.prompt.replace(".txt","")
+    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" # jsonl
     model_responses_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
 
     # check if model outputs file exists
@@ -138,7 +139,7 @@ def main():
         
     elif args.task_name == 'bigtom':
         short_model_name = args.model_name.split("/")[-1]  
-        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.prompt}"
+        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{args.prompt}"
         report = evaluate_bigtom(inputs, model_responses, summary_file)
 
 ############ TODO: here you add more task, add evaluate function on utils.py
@@ -147,8 +148,8 @@ def main():
         report = evaluate_hitom(inputs, model_responses)
 
     short_model_name = args.model_name.split("/")[-1]  
-
-    with open(f'./results/report_{short_model_name}_{args.task_name}_cot-{args.use_cot}_tt-{args.use_tt}.json', 'w') as f:
+    prompt_name = args.prompt.replace(".txt","")
+    with open(f'./results/report_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.json', 'w') as f:
         json.dump(report, f, indent=4)
 
 

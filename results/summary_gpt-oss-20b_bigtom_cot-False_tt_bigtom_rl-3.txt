@@ -1,0 +1,28 @@
+Condition | Variable | InitBelief | Correct | Total | Accuracy
+-----------------------------------------------------------------
+false_belief | backward_belief |          0 |       1 |     8 |   12.5%
+false_belief | backward_belief |          1 |       2 |     6 |   33.3%
+false_belief | forward_belief  |          1 |       1 |     8 |   12.5%
+false_belief | forward_belief  |          0 |       2 |     5 |   40.0%
+false_belief | forward_action  |          0 |       1 |     9 |   11.1%
+false_belief | forward_action  |          1 |       1 |     6 |   16.7%
+false_control | forward_action  |          1 |       6 |    14 |   42.9%
+false_control | forward_action  |          0 |       6 |     9 |   66.7%
+false_control | backward_belief |          0 |       2 |     7 |   28.6%
+false_control | backward_belief |          1 |       4 |     6 |   66.7%
+false_control | forward_belief  |          1 |       7 |     8 |   87.5%
+false_control | forward_belief  |          0 |       2 |     6 |   33.3%
+true_control | forward_belief  |          1 |       6 |     8 |   75.0%
+true_control | forward_belief  |          0 |       1 |     6 |   16.7%
+true_control | backward_belief |          0 |       4 |    14 |   28.6%
+true_control | backward_belief |          1 |       5 |     7 |   71.4%
+true_control | forward_action  |          0 |       7 |     9 |   77.8%
+true_control | forward_action  |          1 |       6 |     9 |   66.7%
+true_belief | forward_action  |          1 |       6 |     8 |   75.0%
+true_belief | forward_action  |          0 |       6 |     8 |   75.0%
+true_belief | forward_belief  |          1 |       4 |    11 |   36.4%
+true_belief | forward_belief  |          0 |       4 |     9 |   44.4%
+true_belief | backward_belief |          0 |       0 |     6 |    0.0%
+true_belief | backward_belief |          1 |       2 |     9 |   22.2%
+true_belief | percept_to_belief |          1 |       0 |     4 |    0.0%
+Overall accuracy: 43.00%
