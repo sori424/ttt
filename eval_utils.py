@@ -381,9 +381,10 @@ def run_reports(qa_results, aggregation_target, conversation_input_type, model_n
 
 def evaluate_bigtom(inputs, model_responses):
 
-    stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'correct': 0, 'total': 0})))
+    stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'valid': 0 ,'correct': 0, 'total': 0})))
     total_correct = 0
     total_count = 0
+    total_valid_responses = 0
 
     for idx, item in enumerate(inputs):
         meta = item.get('meta_data', {})
@@ -409,20 +410,29 @@ def evaluate_bigtom(inputs, model_responses):
         total_count += 1
         if correct:
             total_correct += 1
+
+        # check for valid format
+        answer_options = ['(a)', '(b)']
+        if any(a_opt in model_response for a_opt in answer_options):
+            total_valid_responses += 1
+            stats[cond][var][ib]['valid'] += 1
+
        
 
     # Print summary
-    print("Condition | Variable | InitBelief | Correct | Total | Accuracy")
+    print("Condition | Variable | InitBelief | Valid | Correct | Total | Accuracy")
     print("-" * 65)
     for cond in stats:
         for var in stats[cond]:
             for ib in stats[cond][var]:
                 s = stats[cond][var][ib]
                 acc = (s['correct'] / s['total']) if s['total'] else 0
-                print(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}", file=sys.stderr)
+                print(f"{cond:10} | {var:15} | {ib:10} | {s['valid']:7} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}", file=sys.stderr)
     
     overall_acc = total_correct / total_count if total_count > 0 else 0
+    valid_response_acc = total_valid_responses / total_count if total_count > 0 else 0
     print(f"Overall accuracy: {overall_acc:.2%}", file=sys.stderr)
+    print(f"Valid response accuracy: {valid_response_acc:.2%}", file=sys.stderr)
     return stats
 
 
