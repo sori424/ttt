@@ -60,6 +60,8 @@ def run_inference_rules(args, inputs, model, tokenizer):
 
     # check if the file exists
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    short_model_name = args.model_name.split("/")[-1]  
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']
@@ -69,8 +71,9 @@ def run_inference_rules(args, inputs, model, tokenizer):
         else:
             input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
         
-        if idx <= last_idx:
-            continue
+        # This is only for checkpointing
+        #if idx <= last_idx:
+        #    continue
         
         response = gen_chat_template(model, tokenizer, input_prompt)
         response = parse_response(response)
@@ -167,7 +170,7 @@ def main():
                         help='whether to use rules or not',
     )
     
-    parser.add_argument('--nl-rule', # use nl rule or if thenn else
+    parser.add_argument('--use-nl', # use nl rule or if thenn else
                         action=argparse.BooleanOptionalAction,
                         default=False,
                         help='whether to use rules or not',
