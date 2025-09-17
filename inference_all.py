@@ -53,6 +53,37 @@ def get_last_savepoint(args):
     
     return last_idx, model_responses, model_responses_filename_path
 
+def run_inference_rules(args, inputs, model, tokenizer):
+    
+    target_data = inputs
+    model_responses = []
+
+    # check if the file exists
+    #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    logging.info(f"Generating responses...")
+    for idx, item in enumerate(tqdm(target_data)):
+        input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']
+        if args.use_nl:
+            # Use natural language rule
+            input_prompt += '\n\nRule to answer this question: ' + item['natural_language']
+        else:
+            input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
+        
+        if idx <= last_idx:
+            continue
+        
+        response = gen_chat_template(model, tokenizer, input_prompt)
+        response = parse_response(response)
+        model_responses.append(response)
+
+        # save the model responses in a file on the fly
+        with open(response_filename_path, 'a') as f:
+            json.dump({'index': idx, 'input_prompt': input_prompt, 'response': response}, f)
+            f.write("\n")
+
+    assert len(model_responses) == len(target_data)
+
+    return model_responses
 
 def run_inference(args, inputs, model, tokenizer):
     
@@ -60,7 +91,7 @@ def run_inference(args, inputs, model, tokenizer):
     model_responses = []
 
     # check if the file exists
-    last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
 
@@ -118,17 +149,50 @@ def main():
                         help='path to the prompt',
     )
     
+    parser.add_argument('--rules', # or no-use-tt
+                        type=str,
+                        default="results-backward_belief-false_belief-0.json",
+                        help='Files with all the rules.',
+    )
+    
     parser.add_argument('--use-tt', # or no-use-tt
                         action=argparse.BooleanOptionalAction,
                         default=False,
                         help='whether to use tt or not',
     )
+    
+    parser.add_argument('--use-rules', # use rules or not
+                        action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help='whether to use rules or not',
+    )
+    
+    parser.add_argument('--nl-rule', # use nl rule or if thenn else
+                        action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help='whether to use rules or not',
+    )
+    
+    parser.add_argument('--debugging', # or no-use-tt
+                        action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help='Subsample instances etc. to make things more efficient or not',
+    )
     args = parser.parse_args()
 
     tokenizer, model = load_model(args.model_name)
-    inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
-    inputs = random.sample(inputs, 200)  ## for test
-    model_responses = run_inference(args, inputs, model, tokenizer)
+    
+
+    
+    if args.debugging:
+        inputs = random.sample(inputs, 200)  ## for test
+        
+    if args.use_rules:
+        inputs = json.load(open(args.rules, 'r'))
+        model_responses = run_inference_rules(args, inputs, model, tokenizer)
+    else: 
+        inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
+        model_responses = run_inference(args, inputs, model, tokenizer)
 
     if args.task_name == 'fantom':
         conversation_input_type = 'full'
@@ -139,7 +203,7 @@ def main():
         
     elif args.task_name == 'bigtom':
         short_model_name = args.model_name.split("/")[-1]  
-        summary_file = f"./results/summary_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{args.prompt}"
+        summary_file = f"./results/summary_{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{args.prompt}"
         report = evaluate_bigtom(inputs, model_responses, summary_file)
 
 ############ TODO: here you add more task, add evaluate function on utils.py
@@ -149,7 +213,9 @@ def main():
 
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.prompt.replace(".txt","")
-    with open(f'./results/report_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.json', 'w') as f:
+    if use_rules:
+        prompt_name = args.rules.split("/")[-1].replace('.json','')
+    with open(f'./results/report_{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.json', 'w') as f:
         json.dump(report, f, indent=4)
 
 
