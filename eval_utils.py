@@ -395,7 +395,11 @@ def evaluate_bigtom(inputs, model_responses, output_file=None):
         var = meta.get('variable')
         ib = meta.get('init_belief')
 
-        answer_key = item['answer'].split(')')[0]
+        try:
+            answer_key = item['answer'].split(')')[0]
+        except KeyError:
+            # TODO: fix rule data format!
+            answer_key = item['gold_answer'].split(')')[0]
         if 'a' in answer_key:
             true_answer_key = '(a)'
         elif 'b' in answer_key:

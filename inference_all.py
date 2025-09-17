@@ -54,14 +54,15 @@ def get_last_savepoint(args):
     return last_idx, model_responses, model_responses_filename_path
 
 def run_inference_rules(args, inputs, model, tokenizer):
-    
     target_data = inputs
     model_responses = []
 
     # check if the file exists
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     short_model_name = args.model_name.split("/")[-1]  
+    prompt_name = args.rules.split("/")[-1].replace('.json','')    
     responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']
@@ -84,23 +85,26 @@ def run_inference_rules(args, inputs, model, tokenizer):
             json.dump({'index': idx, 'input_prompt': input_prompt, 'response': response}, f)
             f.write("\n")
 
-    assert len(model_responses) == len(target_data)
+    #assert len(model_responses) == len(target_data)
 
     return model_responses
 
-def run_inference(args, inputs, model, tokenizer):
-    
+def run_inference(args, inputs, model, tokenizer):  
     target_data = inputs
     model_responses = []
 
     # check if the file exists
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    prompt_name = args.prompt.replace(".txt","")
+    short_model_name = args.model_name.split("/")[-1]  
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)    
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
 
         input_prompt = 'Story: ' + item['input_text']
-        if idx <= last_idx:
-            continue
+        #if idx <= last_idx:
+        #    continue
 
         if args.use_cot:
             cot_input_prompt = input_prompt + " Let's think step by step."
@@ -124,7 +128,7 @@ def run_inference(args, inputs, model, tokenizer):
             json.dump({'index': idx, 'input_prompt': input_prompt, 'response': response}, f)
             f.write("\n")
 
-    assert len(model_responses) == len(target_data)
+    #assert len(model_responses) == len(target_data)
 
     return model_responses
 
@@ -184,41 +188,30 @@ def main():
     args = parser.parse_args()
 
     tokenizer, model = load_model(args.model_name)
-    
 
-    
+    # Use separate inputs
+    inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
     if args.debugging:
-        inputs = random.sample(inputs, 200)  ## for test
-        
+        inputs = random.sample(inputs, 10)  ## for test 
+ 
     if args.use_rules:
-        inputs = json.load(open(args.rules, 'r'))
-        model_responses = run_inference_rules(args, inputs, model, tokenizer)
-    else: 
-        inputs = json.load(open(os.path.join(DATA_DIR_PATH, f'{args.task_name}/{args.task_name}_flattened.json'), 'r'))
+        rule_inputs = json.load(open(args.rules, 'r'))
+        if args.debugging:
+            rule_inputs = random.sample(rule_inputs, 10)  ## for test
+        model_responses = run_inference_rules(args, rule_inputs, model, tokenizer)
+    else:
         model_responses = run_inference(args, inputs, model, tokenizer)
 
-    if args.task_name == 'fantom':
-        conversation_input_type = 'full'
-        aggregation_target = 'set'
-
-        qas = evaluate_fantom(inputs, model_responses)
-        report = run_reports(qas, aggregation_target, conversation_input_type, args.model_name)
-        
-    elif args.task_name == 'bigtom':
-        short_model_name = args.model_name.split("/")[-1]  
-        summary_file = f"./results/summary_{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{args.prompt}"
-        report = evaluate_bigtom(inputs, model_responses, summary_file)
-
-############ TODO: here you add more task, add evaluate function on utils.py
-        
-    elif args.task_name == 'hitom':
-        report = evaluate_hitom(inputs, model_responses)
 
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.prompt.replace(".txt","")
-    if use_rules:
+    if args.use_rules:
         prompt_name = args.rules.split("/")[-1].replace('.json','')
-    with open(f'./results/report_{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.json', 'w') as f:
+    fname = "_{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}"
+    summary_file = f"./results/summary_{fname}"
+    report = evaluate_bigtom(inputs, model_responses, summary_file)
+    
+    with open(f'./results/report_{fname}.json', 'w') as f:
         json.dump(report, f, indent=4)
 
 
