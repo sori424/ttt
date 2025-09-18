@@ -70,8 +70,13 @@ def run_inference_rules(args, inputs, model, tokenizer):
             # Use natural language rule
             input_prompt += '\n\nRule to answer this question: ' + item['natural_language']
         else:
-            input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
-        
+            try:
+                input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
+            except TypeError:
+                logging.error(f"Error in instance {item['index']}! Expected to find typed_variables, rule_if, and rule_then but got:")
+                logging.error(f"{item['typed_variables']}, {item['rule_if']}, and {item['rule_then']} ")
+                logging.error(f"Skipping instance {item['index']}!")
+                continue
         # This is only for checkpointing
         #if idx <= last_idx:
         #    continue
