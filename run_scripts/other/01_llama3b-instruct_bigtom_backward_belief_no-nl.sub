@@ -1,0 +1,16 @@
+# HTCondor submit description file
+# Everything with a leading # is a comment
+
+initialdir              = /nethome/julee/2025-ttt
+executable              = /nethome/julee/2025-ttt/01_llama3b-instruct_bigtom_backward_belief_no-nl.sh
+output                  = /scratch/julee/2025-ttt/logs/01_llama3b-instruct_bigtom_backward_belief_no-nl.sh.$(Month)_$(Day)_$(SUBMIT_TIME).out
+error                   = /scratch/julee/2025-ttt/logs/01_llama3b-instruct_bigtom_backward_belief_no-nl.sh.$(Month)_$(Day)_$(SUBMIT_TIME).err
+log                     = /scratch/julee/2025-ttt/logs/01_llama3b-instruct_bigtom_backward_belief_no-nl.sh.$(Month)_$(Day)_$(SUBMIT_TIME).log
+request_GPUs            = 1
+request_memory          = 10G
+request_CPUs            = 4
+requirements            = (GPUs_GlobalMemoryMb >= 40000) && (TARGET.UidDomain == "coli.uni-saarland.de")
+notify_user		        = ji-ung.lee@uni-saarland.de 
+notification		    = always
+
+queue 1

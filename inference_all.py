@@ -207,8 +207,8 @@ def main():
     prompt_name = args.prompt.replace(".txt","")
     if args.use_rules:
         prompt_name = args.rules.split("/")[-1].replace('.json','')
-    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}"
-    summary_file = f"./results/summary_{fname}.json"
+    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_nl-{args.use_nl}_{prompt_name}"
+    summary_file = f"./results/summary_{fname}.txt"
     report = evaluate_bigtom(inputs, model_responses, summary_file)
     
     with open(f'./results/report_{fname}', 'w') as f:
