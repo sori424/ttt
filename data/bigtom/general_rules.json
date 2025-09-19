@@ -1,0 +1,34 @@
+[
+    {
+        "index":0,
+        "natural_language":"If an agent A last observed a relevant condition S at time t₀ and is unaware of a change, A will assume S still holds at t₁."
+     },
+    {
+        "index":1,
+        "natural_language":"If an object x appears to have property P and there’s no contrary cue, an agent A treats x as P."
+    },
+    {
+        "index":2,
+        "natural_language":"Given a chosen plan π for a goal G, if an agent A isn’t aware of a new obstacle, A executes π unchanged."
+    },
+    {
+        "index":3,
+        "natural_language":"If an agent A believes resource R meets requirement Q and knows of no defect, A uses R for Q."
+    },
+    {
+        "index":4,
+        "natural_language":"If a reading or a report D is from a normally reliable source and an agent A lacks a reason to doubt it, A accepts D."
+    },
+    {
+        "index":5,
+        "natural_language":"If an agent A saw claim C but not a later correction, A will reason or seek info as if C were still the topic or truth."
+    },
+    {
+        "index":6,
+        "natural_language":"If a hazard H exists but an agent A doesn’t perceive or know it, A won’t mitigate H and will proceed as usual."
+    },
+    {
+        "index":7,
+        "natural_language":"If an agent A needs precondition P for a goal G and believes an agent B can supply P while A can’t (or isn’t sure they can), A requests P from B."
+    }
+]

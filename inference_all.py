@@ -53,6 +53,46 @@ def get_last_savepoint(args):
     
     return last_idx, model_responses, model_responses_filename_path
 
+
+def run_inference_rules_general(args, inputs, model, tokenizer):
+    target_data = inputs
+    model_responses = []
+
+    # check if the file exists
+    #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    short_model_name = args.model_name.split("/")[-1]  
+    rules = json.load(open(args.rules, 'r'))
+    prompt_name = args.rules.split("/")[-1].replace('.json','')    
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
+    logging.info(f"Generating responses...")
+    for idx, item in enumerate(tqdm(target_data)):
+        for rule in rules:
+            input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']         
+            if args.use_nl:
+                # Use natural language rule
+                input_prompt += '\n\n' + rule['natural_language']
+            else:
+                # TODO: implement me!!!!
+                continue
+            # This is only for checkpointing
+            #if idx <= last_idx:
+            #    continue
+            
+            response = gen_chat_template(model, tokenizer, input_prompt)
+            response = parse_response(response)
+            model_responses.append(response)
+
+            # save the model responses in a file on the fly
+            with open(response_filename_path, 'a') as f:
+                json.dump({'index': idx, 'rule-index':rule['index'], 'input_prompt': input_prompt, 'response': response}, f)
+                f.write("\n")
+
+    #assert len(model_responses) == len(target_data)
+
+    return model_responses
+
+
 def run_inference_rules(args, inputs, model, tokenizer):
     target_data = inputs
     model_responses = []
@@ -179,6 +219,12 @@ def main():
                         help='whether to use rules or not',
     )
     
+    parser.add_argument('--general-rules', # use rules or not
+                        action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help='Individual or general rules (will apply every rule to every case!',
+    )
+    
     parser.add_argument('--use-nl', # use nl rule or if thenn else
                         action=argparse.BooleanOptionalAction,
                         default=False,
@@ -200,10 +246,15 @@ def main():
         inputs = random.sample(inputs, 10)  ## for test 
  
     if args.use_rules:
-        rule_inputs = json.load(open(args.rules, 'r'))
-        if args.debugging:
-            rule_inputs = random.sample(rule_inputs, 10)  ## for test
-        model_responses = run_inference_rules(args, rule_inputs, model, tokenizer)
+
+        if args.general_rules:
+            model_responses = run_inference_rules_general(args, inputs, model, tokenizer)
+        else:   
+            if args.debugging:
+                rule_inputs = json.load(open(args.rules, 'r'))
+                rule_inputs = random.sample(rule_inputs, 10)  ## for test 
+            # TODO: change this to map the rule to the original flattened file.
+            model_responses = run_inference_rules(args, rule_inputs, model, tokenizer)
     else:
         model_responses = run_inference(args, inputs, model, tokenizer)
 

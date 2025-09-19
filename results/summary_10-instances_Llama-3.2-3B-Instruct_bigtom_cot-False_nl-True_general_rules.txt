@@ -1,0 +1,10 @@
+Condition | Variable | InitBelief | Correct | Total | Accuracy
+-----------------------------------------------------------------
+false_belief | backward_belief |          0 |       2 |     2 |  100.0%
+false_control | forward_action  |          1 |       0 |     1 |    0.0%
+false_control | forward_action  |          0 |       1 |     1 |  100.0%
+false_control | backward_belief |          0 |       0 |     1 |    0.0%
+true_control | forward_belief  |          1 |       0 |     2 |    0.0%
+true_control | backward_belief |          0 |       2 |     2 |  100.0%
+true_belief | forward_action  |          1 |       1 |     1 |  100.0%
+Overall accuracy: 60.00%

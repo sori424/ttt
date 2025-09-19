@@ -69,6 +69,7 @@ def evaluate_belief_q(qa, model_response, metric='cosine'):
         return True, personx_view_lexical_overlap
 
 def evaluate_mc_belief_q(qa, model_response):
+    # variable = [forward_action,backward_belief] condition = false_belief, init_belief=0
     """
     Evaluate the multiple-choice version belief question.
 
