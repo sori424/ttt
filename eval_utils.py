@@ -382,7 +382,7 @@ def run_reports(qa_results, aggregation_target, conversation_input_type, model_n
 
 
 ### Evaluation utils for Bigtom
-def evaluate_bigtom_general_rules(inputs, model_responses, rules, output_file=None):
+def evaluate_bigtom_general_rules(inputs, model_responses, output_file=None):
 
     stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'correct': 0, 'total': 0})))
     total_correct = 0
