@@ -382,7 +382,54 @@ def run_reports(qa_results, aggregation_target, conversation_input_type, model_n
 
 
 ### Evaluation utils for Bigtom
+def evaluate_bigtom_general_rules(inputs, model_responses, rules, output_file=None):
 
+    stats = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: {'correct': 0, 'total': 0})))
+    total_correct = 0
+    total_count = 0
+
+    for idx, item in enumerate(inputs):
+        meta = item.get('meta_data', {})
+        cond = meta.get('condition')
+        var = meta.get('variable')
+        ib = meta.get('init_belief')
+
+        try:
+            answer_key = item['answer'].split(')')[0]
+        except KeyError:
+            # TODO: fix rule data format!
+            answer_key = item['gold_answer'].split(')')[0]
+        if 'a' in answer_key:
+            true_answer_key = '(a)'
+        elif 'b' in answer_key:
+            true_answer_key = '(b)'
+        else:
+            continue  # skip bad format
+
+        model_response = model_responses[idx].lower().strip()
+
+        stats[cond][var][ib]['total'] += 1
+        correct = true_answer_key in model_response 
+        if correct:
+            stats[cond][var][ib]['correct'] += 1
+
+        total_count += 1
+        if correct:
+            total_correct += 1
+       
+    # Print summary+
+    with open(output_file,'w') as f:
+        f.write("Condition | Variable | InitBelief | Correct | Total | Accuracy\n")
+        f.write("-" * 65 + "\n")
+        for cond in stats:
+            for var in stats[cond]:
+                for ib in stats[cond][var]:
+                    s = stats[cond][var][ib]
+                    acc = (s['correct'] / s['total']) if s['total'] else 0
+                    f.write(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}\n")
+        overall_acc = total_correct / total_count if total_count > 0 else 0
+        f.write(f"Overall accuracy: {overall_acc:.2%}")
+    return stats
 
 def evaluate_bigtom(inputs, model_responses, output_file=None):
 

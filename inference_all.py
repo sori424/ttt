@@ -93,7 +93,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     return model_responses
 
 
-def run_inference_rules(args, inputs, model, tokenizer):
+def run_inference_rules_file(args, inputs, model, tokenizer):
     target_data = inputs
     model_responses = []
 
@@ -254,7 +254,7 @@ def main():
                 rule_inputs = json.load(open(args.rules, 'r'))
                 rule_inputs = random.sample(rule_inputs, 10)  ## for test 
             # TODO: change this to map the rule to the original flattened file.
-            model_responses = run_inference_rules(args, rule_inputs, model, tokenizer)
+            model_responses = run_inference_rules_file(args, rule_inputs, model, tokenizer)
     else:
         model_responses = run_inference(args, inputs, model, tokenizer)
 
@@ -265,7 +265,11 @@ def main():
         prompt_name = args.rules.split("/")[-1].replace('.json','')
     fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_nl-{args.use_nl}_{prompt_name}"
     summary_file = f"./results/summary_{fname}.txt"
-    report = evaluate_bigtom(inputs, model_responses, summary_file)
+    
+    if args.general_rules:
+        report = evaluate_bigtom_general_rules(inputs, model_responses, summary_file)
+    else:
+        report = evaluate_bigtom(inputs, model_responses, summary_file)
     
     with open(f'./results/report_{fname}', 'w') as f:
         json.dump(report, f, indent=4)
