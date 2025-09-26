@@ -422,14 +422,13 @@ def evaluate_bigtom_general_rules(inputs, model_responses, output_file=None):
                 total_correct += 1
            
         # Print summary+
-        output_file = output_file.replace(".txt", f"_rule-{rule_index}.txt")
-        with open(output_file,'w') as f:
+        with open(output_file.replace(".txt", f"_rule-{rule_index}.txt"),'w') as f:
             f.write("Condition | Variable | InitBelief | Correct | Total | Accuracy\n")
             f.write("-" * 65 + "\n")
             for cond in stats[rule_index]:
-                for var in stats[cond]:
-                    for ib in stats[cond][var]:
-                        s = stats[cond][var][ib]
+                for var in stats[rule_index][cond]:
+                    for ib in stats[rule_index][cond][var]:
+                        s = stats[rule_index][cond][var][ib]
                         acc = (s['correct'] / s['total']) if s['total'] else 0
                         f.write(f"{cond:10} | {var:15} | {ib:10} | {s['correct']:7} | {s['total']:5} | {acc:7.1%}\n")
             overall_acc = total_correct / total_count if total_count > 0 else 0
