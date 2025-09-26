@@ -34,7 +34,7 @@ def parse_response(response):
 def get_last_savepoint(args):
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.prompt.replace(".txt","")
-    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" # jsonl
+    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" # jsonl
     model_responses_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
 
     # check if model outputs file exists
@@ -63,23 +63,26 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         for rule in rules:
-            input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']         
-            if args.use_nl:
-                # Use natural language rule
-                input_prompt += '\n\n' + rule['natural_language']
+            input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
+            if args.system_prompt:
+                response = gen_chat_template_system(model, tokenizer, input_prompt, rule['natural_language'])
             else:
-                # TODO: implement me!!!!
-                continue
-            # This is only for checkpointing
-            #if idx <= last_idx:
-            #    continue
-
-            response = gen_chat_template(model, tokenizer, input_prompt)
+                if args.use_nl:
+                    # Use natural language rule
+                    input_prompt += '\n\n' + rule['natural_language']
+                else:
+                    # TODO: implement me!!!!
+                    continue
+                # This is only for checkpointing
+                #if idx <= last_idx:
+                #    continue
+                response = gen_chat_template(model, tokenizer, input_prompt)
+                
             response = parse_response(response)
             meta = item.get('meta_data', {})
             try:
@@ -112,27 +115,31 @@ def run_inference_rules_file(args, inputs, model, tokenizer):
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']
-        if args.use_nl:
-            # Use natural language rule
-            input_prompt += '\n\nRule to answer this question: ' + item['natural_language']
-        else:
-            try:
-                input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
-            except TypeError:
-                logging.error(f"Error in instance {item['index']}! Expected to find typed_variables, rule_if, and rule_then but got:")
-                logging.error(f"{item['typed_variables']}, {item['rule_if']}, and {item['rule_then']} ")
-                logging.error(f"Skipping instance {item['index']}!")
-                continue
         # This is only for checkpointing
         #if idx <= last_idx:
         #    continue
-        
-        response = gen_chat_template(model, tokenizer, input_prompt)
+        if args.system_prompt:
+            response = gen_chat_template_system(model, tokenizer, input_prompt, item['natural_language'])
+        else:
+            if args.use_nl:
+                # Use natural language rule
+                input_prompt += '\n\nRule to answer this question: ' + item['natural_language']
+            else:
+                try:
+                    input_prompt += '\n\nRule to answer this question: ' + item['typed_variables'] + '\n' + item['rule_if'] + '\n' + item['rule_then']
+                except TypeError:
+                    logging.error(f"Error in instance {item['index']}! Expected to find typed_variables, rule_if, and rule_then but got:")
+                    logging.error(f"{item['typed_variables']}, {item['rule_if']}, and {item['rule_then']} ")
+                    logging.error(f"Skipping instance {item['index']}!")
+                    continue
+            response = gen_chat_template(model, tokenizer, input_prompt)
+            
+            
         response = parse_response(response)
         model_responses.append(response)
 
@@ -153,7 +160,7 @@ def run_inference(args, inputs, model, tokenizer):
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     prompt_name = args.prompt.replace(".txt","")
     short_model_name = args.model_name.split("/")[-1]  
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)    
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
@@ -247,6 +254,12 @@ def main():
                         default=False,
                         help='Subsample instances etc. to make things more efficient or not',
     )
+    
+    parser.add_argument('--system-prompt', # add the rule to the system prompt or not
+                        action=argparse.BooleanOptionalAction,
+                        default=False,
+                        help='add the rule to the system prompt or not',
+    )
     args = parser.parse_args()
 
     tokenizer, model = load_model(args.model_name)
@@ -274,7 +287,7 @@ def main():
     prompt_name = args.prompt.replace(".txt","")
     if args.use_rules:
         prompt_name = args.rules.split("/")[-1].replace('.json','')
-    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_nl-{args.use_nl}_{prompt_name}"
+    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_nl-{args.use_nl}_{prompt_name}"
     summary_file = f"./results/summary_{fname}.txt"
     
     if args.general_rules:
