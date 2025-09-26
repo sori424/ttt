@@ -56,7 +56,7 @@ def get_last_savepoint(args):
 
 def run_inference_rules_general(args, inputs, model, tokenizer):
     target_data = inputs
-    model_responses = []
+    model_responses = {}
 
     # check if the file exists
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
@@ -78,14 +78,25 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
             # This is only for checkpointing
             #if idx <= last_idx:
             #    continue
-            
+
             response = gen_chat_template(model, tokenizer, input_prompt)
             response = parse_response(response)
-            model_responses.append(response)
+            meta = item.get('meta_data', {})
+            try:
+                model_responses[meta.get('story_index')]
+            except KeyError:
+                model_responses[meta.get('story_index')] = {}
+            try:
+                model_responses[meta.get('story_index')][meta.get('within_story_index')] 
+            except KeyError:
+                model_responses[meta.get('story_index')][meta.get('within_story_index')] = {}
+
+            model_responses[meta.get('story_index')][meta.get('within_story_index')][rule['index']] = response
+            #"response":response, "rule_index":rule['index'], "story_index":meta.get('story_index'), "within_story_index":meta.get('within_story_index') })
 
             # save the model responses in a file on the fly
             with open(response_filename_path, 'a') as f:
-                json.dump({'index': idx, 'rule-index':rule['index'], 'input_prompt': input_prompt, 'response': response}, f)
+                json.dump({'story_index': meta.get('story_index'), 'within_story_index':meta.get('within_story_index'), 'rule_index':rule['index'], 'input_prompt': input_prompt, 'response': response}, f)
                 f.write("\n")
 
     #assert len(model_responses) == len(target_data)
