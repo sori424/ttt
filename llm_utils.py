@@ -23,13 +23,13 @@ def gen_text(model, tokenizer, input_text):
     return generated_text
 
 
-def gen_chat_template_system(model, tokenizer, input_text, rule):
+def gen_chat_template_system(model, tokenizer, input_text, rule, effort):
 
     message = [
         {"role": "system", "content": f"You are a helpful assistant. Use following rule when answering questions: {rule}"},
         {"role": "user", "content": input_text}
     ]
-    prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+    prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True, reasoning_effort=effort)
     input = tokenizer(prompt, return_tensors='pt').to('cuda')
 
     output_tokens = model.generate(
@@ -47,13 +47,13 @@ def gen_chat_template_system(model, tokenizer, input_text, rule):
 
     return generated_text
 
-def gen_chat_template(model, tokenizer, input_text):
+def gen_chat_template(model, tokenizer, input_text, effort):
 
     message = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": input_text}
     ]
-    prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True)
+    prompt = tokenizer.apply_chat_template(message, tokenize=False, add_generation_prompt=True, reasoning_effort=effort)
     input = tokenizer(prompt, return_tensors='pt').to('cuda')
 
     output_tokens = model.generate(

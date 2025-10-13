@@ -63,14 +63,14 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         for rule in rules:
             input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
             if args.system_prompt:
-                response = gen_chat_template_system(model, tokenizer, input_prompt, rule['natural_language'])
+                response = gen_chat_template_system(model, tokenizer, input_prompt, rule['natural_language'], args.effort)
             else:
                 if args.use_nl:
                     # Use natural language rule
@@ -81,7 +81,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
                 # This is only for checkpointing
                 #if idx <= last_idx:
                 #    continue
-                response = gen_chat_template(model, tokenizer, input_prompt)
+                response = gen_chat_template(model, tokenizer, input_prompt, args.effort)
                 
             response = parse_response(response)
             meta = item.get('meta_data', {})
@@ -115,7 +115,7 @@ def run_inference_rules_file(args, inputs, model, tokenizer):
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
@@ -124,7 +124,7 @@ def run_inference_rules_file(args, inputs, model, tokenizer):
         #if idx <= last_idx:
         #    continue
         if args.system_prompt:
-            response = gen_chat_template_system(model, tokenizer, input_prompt, item['natural_language'])
+            response = gen_chat_template_system(model, tokenizer, input_prompt, item['natural_language'], args.effort)
         else:
             if args.use_nl:
                 # Use natural language rule
@@ -137,7 +137,7 @@ def run_inference_rules_file(args, inputs, model, tokenizer):
                     logging.error(f"{item['typed_variables']}, {item['rule_if']}, and {item['rule_then']} ")
                     logging.error(f"Skipping instance {item['index']}!")
                     continue
-            response = gen_chat_template(model, tokenizer, input_prompt)
+            response = gen_chat_template(model, tokenizer, input_prompt, args.effort)
             
             
         response = parse_response(response)
@@ -160,7 +160,7 @@ def run_inference(args, inputs, model, tokenizer):
     #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
     prompt_name = args.prompt.replace(".txt","")
     short_model_name = args.model_name.split("/")[-1]  
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" #
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)    
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
@@ -182,7 +182,7 @@ def run_inference(args, inputs, model, tokenizer):
             tt_input_prompt = f"{tt_text}\n\n{input_prompt}"
             input_prompt = tt_input_prompt
         
-        response = gen_chat_template(model, tokenizer, input_prompt)
+        response = gen_chat_template(model, tokenizer, input_prompt, args.effort)
         response = parse_response(response)
         model_responses.append(response)
 
@@ -260,6 +260,12 @@ def main():
                         default=False,
                         help='add the rule to the system prompt or not',
     )
+    
+    parser.add_argument('--effort', # reasoning effort for gpt 
+                        type=str,
+                        default="low",
+                        help='reasoning effort for GPT',
+    )
     args = parser.parse_args()
 
     tokenizer, model = load_model(args.model_name)
@@ -287,7 +293,7 @@ def main():
     prompt_name = args.prompt.replace(".txt","")
     if args.use_rules:
         prompt_name = args.rules.split("/")[-1].replace('.json','')
-    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_nl-{args.use_nl}_{prompt_name}"
+    fname = f"{len(inputs)}-instances_{short_model_name}_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_nl-{args.use_nl}_{prompt_name}_{args.effort}"
     summary_file = f"./results/summary_{fname}.txt"
     
     if args.general_rules:
