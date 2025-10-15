@@ -60,8 +60,8 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     target_data = inputs
     model_responses = {}
 
-    # check if the file exists
-    #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    # load previous responses
+    search_dict = load_existing_responses(args)
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
