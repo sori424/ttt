@@ -74,7 +74,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
             story_idx = meta.get('story_index')
             w_story_idx = meta.get('within_story_index')
             if rule['index'] in search_dict[story_idx][w_story_idx]:
-                logging.info(f"Rule {rule['index'] for story {story_idx} and within story {w_story_idx} already exists. Skipping.}")
+                logging.info(f"Rule {rule['index']} for story {story_idx} and within story {w_story_idx} already exists. Skipping.")
                 continue
             input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
             if args.system_prompt:
