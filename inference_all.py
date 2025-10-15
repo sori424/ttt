@@ -31,10 +31,10 @@ def parse_response(response):
 
     return response
 
-def load_existing_responses(args):
+def load_existing_responses(args,input_len):
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" 
+    responses_filename = f"model_responses_{short_model_name}_{input_len}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" 
     
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     search_dict = {}
@@ -61,7 +61,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     model_responses = {}
 
     # load previous responses
-    search_dict = load_existing_responses(args)
+    search_dict = load_existing_responses(args, len(inputs))
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
