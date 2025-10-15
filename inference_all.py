@@ -31,27 +31,29 @@ def parse_response(response):
 
     return response
 
-def get_last_savepoint(args):
+def load_existing_responses(args):
     short_model_name = args.model_name.split("/")[-1]  
-    prompt_name = args.prompt.replace(".txt","")
-    responses_filename = f"model_responses_{short_model_name}_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}.jsonl" # jsonl
-    model_responses_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
-
-    # check if model outputs file exists
-    if os.path.exists(model_responses_filename_path):
-        logging.info(f"File {model_responses_filename_path} exists. Reading responses from file...")
-        df = pd.read_json(model_responses_filename_path, lines=True)
-        if len(df) > 0:
-            last_idx = df.iloc[-1]['index']
-            model_responses = df['response'].tolist()
-        else:
-            last_idx = -1
-            model_responses = []
-    else:
-        last_idx = -1
-        model_responses = []
+    prompt_name = args.rules.split("/")[-1].replace('.json','')    
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" 
     
-    return last_idx, model_responses, model_responses_filename_path
+    response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
+    search_dict = {}
+    with open(response_filename_path, 'r') as f:
+        for line in f:
+            resp = json.loads(line)
+            story_idx = resp["story_index"]
+            w_story_idx = resp["within_story_index"]
+            rule_idx = resp["rule_index"]
+            try:
+                search_dict[story_idx]
+            except KeyError:
+                search_dict[story_idx] = {}
+            try:
+                search_dict[story_idx][w_story_idx].append(rule_idx)
+            except KeyError:
+                search_dict[story_idx][w_story_idx] = [rule_idx]
+
+    return search_dict
 
 
 def run_inference_rules_general(args, inputs, model, tokenizer):
@@ -63,11 +65,17 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
-    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" #
+    responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" 
     response_filename_path = os.path.join(EVAL_DIR_PATH, responses_filename)
     logging.info(f"Generating responses...")
     for idx, item in enumerate(tqdm(target_data)):
         for rule in rules:
+            meta = item.get('meta_data', {})
+            story_idx = meta.get('story_index')
+            w_story_idx = meta.get('within_story_index')
+            if rule['index'] in search_dict[story_idx][w_story_idx]:
+                logging.info(f"Rule {rule['index'] for story {story_idx} and within story {w_story_idx} already exists. Skipping.}")
+                continue
             input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
             if args.system_prompt:
                 response = gen_chat_template_system(model, tokenizer, input_prompt, rule['natural_language'], args.effort)
@@ -84,17 +92,17 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
                 response = gen_chat_template(model, tokenizer, input_prompt, args.effort)
                 
             response = parse_response(response)
-            meta = item.get('meta_data', {})
-            try:
-                model_responses[meta.get('story_index')]
-            except KeyError:
-                model_responses[meta.get('story_index')] = {}
-            try:
-                model_responses[meta.get('story_index')][meta.get('within_story_index')] 
-            except KeyError:
-                model_responses[meta.get('story_index')][meta.get('within_story_index')] = {}
 
-            model_responses[meta.get('story_index')][meta.get('within_story_index')][rule['index']] = response
+            try:
+                model_responses[]
+            except KeyError:
+                model_responses[story_idx] = {}
+            try:
+                model_responses[story_idx][w_story_idx] 
+            except KeyError:
+                model_responses[story_idx][w_story_idx] = {}
+
+            model_responses[story_idx][w_story_idx][rule['index']] = response
             #"response":response, "rule_index":rule['index'], "story_index":meta.get('story_index'), "within_story_index":meta.get('within_story_index') })
 
             # save the model responses in a file on the fly
@@ -111,8 +119,8 @@ def run_inference_rules_file(args, inputs, model, tokenizer):
     target_data = inputs
     model_responses = []
 
-    # check if the file exists
-    #last_idx, model_responses, response_filename_path = get_last_savepoint(args)
+    # load previous responses
+    search_dict = load_existing_responses(args)
     short_model_name = args.model_name.split("/")[-1]  
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
     responses_filename = f"model_responses_{short_model_name}_{len(inputs)}-instances_{args.task_name}_cot-{args.use_cot}_sp-{args.system_prompt}_{prompt_name}_{args.effort}.jsonl" #
