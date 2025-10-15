@@ -73,9 +73,12 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
             meta = item.get('meta_data', {})
             story_idx = meta.get('story_index')
             w_story_idx = meta.get('within_story_index')
-            if rule['index'] in search_dict[story_idx][w_story_idx]:
-                logging.info(f"Rule {rule['index']} for story {story_idx} and within story {w_story_idx} already exists. Skipping.")
-                continue
+            try:
+                if rule['index'] in search_dict[story_idx][w_story_idx]:
+                    logging.info(f"Rule {rule['index']} for story {story_idx} and within story {w_story_idx} already exists. Skipping.")
+                    continue
+            except KeyError:
+                pass
             input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
             if args.system_prompt:
                 response = gen_chat_template_system(model, tokenizer, input_prompt, rule['natural_language'], args.effort)
