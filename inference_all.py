@@ -94,7 +94,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
             response = parse_response(response)
 
             try:
-                model_responses[]
+                model_responses[story_idx]
             except KeyError:
                 model_responses[story_idx] = {}
             try:
