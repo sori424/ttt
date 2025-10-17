@@ -61,7 +61,11 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
     model_responses = {}
 
     # load previous responses
-    search_dict = load_existing_responses(args, len(inputs))
+    try:
+        search_dict = load_existing_responses(args, len(inputs))
+    except FileNotFoundError:
+        # If there is no file, just start from scratch
+        pass 
     short_model_name = args.model_name.split("/")[-1]  
     rules = json.load(open(args.rules, 'r'))
     prompt_name = args.rules.split("/")[-1].replace('.json','')    
@@ -77,7 +81,7 @@ def run_inference_rules_general(args, inputs, model, tokenizer):
                 if rule['index'] in search_dict[story_idx][w_story_idx]:
                     logging.info(f"Rule {rule['index']} for story {story_idx} and within story {w_story_idx} already exists. Skipping.")
                     continue
-            except KeyError:
+            except (KeyError,UnboundLocalError):
                 pass
             input_prompt = 'Story: ' + item['story'] + '\n\nQuestion: ' + item['question']   
             if args.system_prompt:
