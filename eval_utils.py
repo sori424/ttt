@@ -401,23 +401,30 @@ def evaluate_bigtom(inputs, model_responses):
             continue  # skip bad format
 
 
-        answer_option_a = item["options"][0].split(')')[-1]
-        answer_option_b = item["options"][1].split(')')[-1]
-        true_answer_sentence = item['answer'].split(')')[-1]
+        answer_option_a = item["options"][0].split(')')[-1].strip()
+        answer_option_b = item["options"][1].split(')')[-1].strip()
+        true_answer_sentence = item['answer'].split(')')[-1].strip()
 
 
         model_response = model_responses[idx].lower().strip()
 
         stats[cond][var][ib]['total'] += 1
-        correct = true_answer_key in model_response.lower()
+        correct = true_answer_key in model_response
         correct_sentence = true_answer_sentence.lower() in model_response.lower()
         if correct or correct_sentence:
         # if correct:
             stats[cond][var][ib]['correct'] += 1
 
         total_count += 1
-        if correct:
+        if correct or correct_sentence:
             total_correct += 1
+
+        # For debugging
+        # print(f"model_response: {model_response}\n"
+        #       f"true_answer_sentence: {true_answer_sentence}\n"
+        #       f"correct_sentence: {correct_sentence}\n"
+        #       f"true_answer_key: {true_answer_key}\n"
+        #       f"correct_answer_key: {correct}\n")
 
         # check for valid format
         answer_options = ['(a)', '(b)', answer_option_a.lower(), answer_option_b.lower()]
